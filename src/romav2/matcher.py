@@ -127,6 +127,8 @@ class Matcher(nn.Module):
         f_B = torch.cat(f_list_B, dim=-1)
         B, H_A, W_A, D_feat = f_A.shape
         B, H_B, W_B, D_feat = f_B.shape
+        # I want to check the model device here
+        print('*'*10, f_A.device, f_B.device, img_A.device, img_B.device, 
         assert D_feat == self.cfg.feat_dim * self.cfg.num_feature_layers, (
             "Feature dimension mismatch"
         )

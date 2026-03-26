@@ -167,6 +167,7 @@ class RoMaV2(nn.Module):
         img_A_hr: torch.Tensor | None = None,
         img_B_hr: torch.Tensor | None = None,
     ) -> dict[str, tuple[torch.Tensor, torch.Tensor] | torch.Tensor]:
+        torch.set_float32_matmul_precision("highest")
         if torch.get_float32_matmul_precision() != "highest":
             raise RuntimeError("Float32 matmul precision must be set to highest")
         assert not self.training, "Currently only inference mode released"

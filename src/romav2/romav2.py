@@ -12,7 +12,7 @@ import torch.nn.functional as F
 from PIL import Image
 
 import logging
-from romav2.device import device
+# from romav2.device import device
 from romav2.features import Descriptor, FineFeatures
 from romav2.geometry import (
     bhwc_grid_sample,
@@ -77,7 +77,7 @@ class RoMaV2(nn.Module):
         anchor_width: int = 512
         anchor_height: int = 512
         setting: Setting = "precise"
-        compile: bool = True
+        compile: bool = False
         name: str = "RoMa v2"
 
     # settings
@@ -89,7 +89,7 @@ class RoMaV2(nn.Module):
     threshold: float | None
     balanced_sampling: bool
 
-    def __init__(self, cfg: Cfg | None = None):
+    def __init__(self, device, cfg: Cfg | None = None):
         super().__init__()
         if cfg is None:
             # default
@@ -106,6 +106,7 @@ class RoMaV2(nn.Module):
         self.refiners = Refiners(cfg.refiners)
         self.refiner_features = FineFeatures(cfg.refiner_features)
         self.to(device)
+        self.device = device
         self.eval()
         self.apply_setting(cfg.setting)
         self.name = cfg.name
@@ -203,7 +204,7 @@ class RoMaV2(nn.Module):
                 continue
             B, C, H, W = img_A.shape
             scale_factor = torch.tensor(
-                (W / self.anchor_width, H / self.anchor_height), device=device
+                (W / self.anchor_width, H / self.anchor_height), device=self.device
             )
             refiner_features_A = self.refiner_features(img_A)
             refiner_features_B = self.refiner_features(img_B)
@@ -275,14 +276,14 @@ class RoMaV2(nn.Module):
             img_pil = Image.open(img_like)
             check_not_i16(img_pil)
             img_pil = img_pil.convert("RGB")
-            img = torch.from_numpy(np.array(img_pil)).permute(2, 0, 1).to(device)
+            img = torch.from_numpy(np.array(img_pil)).permute(2, 0, 1).to(self.device)
         elif isinstance(img_like, Image.Image):
-            img = torch.from_numpy(np.array(img_like)).permute(2, 0, 1).to(device)
+            img = torch.from_numpy(np.array(img_like)).permute(2, 0, 1).to(self.device)
         elif isinstance(img_like, np.ndarray):
             assert img_like.shape[-1] == 3, (
                 f"Image must have 3 channels, but got shape {img_like.shape=}"
             )
-            img = torch.from_numpy(img_like).permute(2, 0, 1).to(device)
+            img = torch.from_numpy(img_like).permute(2, 0, 1).to(self.device)
         elif isinstance(img_like, torch.Tensor):
             assert img_like.shape[1] == 3, (
                 f"Image must have 3 channels, but got shape {img_like.shape=}"
